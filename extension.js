@@ -2,11 +2,11 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import GLib from 'gi://GLib';
 
-import { bindLoggingSetting, log, logError } from './logging.js';
+import { bindLoggingSetting, log, logError } from './src/logging.js';
 
 // Import for side-effect: The UMD bundle does not have modern ES6 exports,
 // so we execute the script to have it attach its main object to the global scope.
-import './kosher-zmanim.js';
+import './src/kosher-zmanim.js';
 const KosherZmanim = globalThis.KosherZmanim;
 
 function findActorByClassName(actor, className) {

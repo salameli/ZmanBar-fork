@@ -9,9 +9,9 @@ required_files=(
   metadata.json
   extension.js
   prefs.js
-  aboutPage.js
-  logging.js
-  kosher-zmanim.js
+  src/aboutPage.js
+  src/logging.js
+  src/kosher-zmanim.js
   schemas/org.gnome.shell.extensions.zmanbar.gschema.xml
 )
 
@@ -24,8 +24,8 @@ done
 
 node --check extension.js
 node --check prefs.js
-node --check aboutPage.js
-node --check logging.js
+node --check src/aboutPage.js
+node --check src/logging.js
 
 python3 -m json.tool metadata.json >/dev/null
 

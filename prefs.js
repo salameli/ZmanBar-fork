@@ -4,9 +4,9 @@ import Gio from 'gi://Gio';
 import Soup from 'gi://Soup?version=3.0';
 import GLib from 'gi://GLib';
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import {createAboutPage} from './aboutPage.js';
+import {createAboutPage} from './src/aboutPage.js';
 
-import { bindLoggingSetting, log, logError } from './logging.js';
+import { bindLoggingSetting, log, logError } from './src/logging.js';
 
 
 export default class ZmanBarPreferences extends ExtensionPreferences {
