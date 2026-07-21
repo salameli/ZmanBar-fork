@@ -4,6 +4,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import { bindLoggingSetting, log, logError } from './src/logging.js';
+import { ReverseGeocoder } from './src/reverseGeocoder.js';
 import { ZmanimMenuButton } from './src/zmanimMenuButton.js';
 
 // Import for side-effect: The UMD bundle does not have modern ES6 exports,
@@ -56,6 +57,7 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._autoLocationStatus = null;
         this._geoclueClientProxy = null;
         this._geoclueLocationSignalId = null;
+        this._reverseGeocoder = null;
         // Note: Can't log here until settings are loaded in enable()
     }
 
@@ -192,19 +194,34 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._autoLocationStatus = null;
     }
 
-    _formatDetectedLocation(latitude, longitude, description) {
-        if (description) {
-            return description;
-        }
-
+    _formatCoordinates(latitude, longitude) {
         return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
     }
 
-    _useAutomaticLocation(latitude, longitude, description) {
-        const detectedLocation = this._formatDetectedLocation(latitude, longitude, description);
-        this._applyLocation(`Current Location (automatic): ${detectedLocation}`, latitude, longitude, 'Automatic Location');
+    _setAutomaticLocationName(latitude, longitude, name) {
+        if (!this._location || this._location.source !== 'Automatic Location') {
+            return;
+        }
+
+        if (this._location.latitude !== latitude || this._location.longitude !== longitude) {
+            return;
+        }
+
+        this._location.name = `Current Location (automatic): ${name}`;
+        this._updateZmanimMenu();
+    }
+
+    _useAutomaticLocation(latitude, longitude) {
+        const coordinates = this._formatCoordinates(latitude, longitude);
+        this._applyLocation(`Current Location (automatic): ${coordinates}`, latitude, longitude, 'Automatic Location');
         log(`Using automatic location: Lat ${latitude}, Lon ${longitude}`);
         this._updateAndCacheValues();
+
+        this._reverseGeocoder?.lookup(latitude, longitude, locationName => {
+            if (locationName) {
+                this._setAutomaticLocationName(latitude, longitude, locationName);
+            }
+        });
     }
 
     _readGeoclueLocation() {
@@ -221,10 +238,9 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._createSystemProxy(locationPath, GEOCLUE_LOCATION_IFACE, locationProxy => {
             const latitude = locationProxy.get_cached_property('Latitude')?.deep_unpack();
             const longitude = locationProxy.get_cached_property('Longitude')?.deep_unpack();
-            const description = locationProxy.get_cached_property('Description')?.deep_unpack();
 
             if (typeof latitude === 'number' && typeof longitude === 'number') {
-                this._useAutomaticLocation(latitude, longitude, description);
+                this._useAutomaticLocation(latitude, longitude);
             } else {
                 this._setAutoLocationUnavailable();
             }
@@ -432,6 +448,7 @@ export default class HebrewDateDisplayExtension extends Extension {
 
     enable() {
         this._settings = this.getSettings();
+        this._reverseGeocoder = new ReverseGeocoder(this.metadata);
         this._loggingSettingsSignal = bindLoggingSetting(this._settings);
         log('Enabling ZmanBar extension.');
         log('KosherZmanim library loaded successfully.');
@@ -469,6 +486,10 @@ export default class HebrewDateDisplayExtension extends Extension {
         }
 
         this._stopAutomaticLocationLookup();
+        if (this._reverseGeocoder) {
+            this._reverseGeocoder.destroy();
+            this._reverseGeocoder = null;
+        }
 
         if (this._settingsChangedIdLat) this._settings.disconnect(this._settingsChangedIdLat);
         if (this._settingsChangedIdLon) this._settings.disconnect(this._settingsChangedIdLon);
