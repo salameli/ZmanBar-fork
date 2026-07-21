@@ -63,6 +63,13 @@ Create a GNOME Shell compatible release zip in `dist/`:
 
 See [docs/TESTING.md](docs/TESTING.md) for the manual smoke-test checklist and release package sanity checks.
 See [docs/STRUCTURE.md](docs/STRUCTURE.md) for details about GNOME Shell layout constraints.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for architecture and local development details.
+
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening an issue or pull request.
+
+This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). Notable changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ## Credits
 
@@ -72,4 +79,4 @@ This fork uses its own extension UUID: `ZmanBar@salameli.github.io`.
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0 or later.
+This project is licensed under the GNU General Public License v3.0 or later. See [LICENSE](LICENSE) for details.

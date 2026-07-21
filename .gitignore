@@ -1,6 +1,11 @@
 # Local editor and IDE state
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
 
 # opencode local state
 .opencode/
@@ -22,6 +27,9 @@ gemini_feedback.txt
 *.zip
 dist/
 build/
+coverage/
+tmp/
+temp/
 
 # Node/package-manager artifacts used only while adapting vendor libraries
 node_modules/
