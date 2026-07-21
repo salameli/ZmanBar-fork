@@ -18,3 +18,4 @@ These constraints limit how far the repository can be reorganized without adding
 - `assets/` contains screenshots and static assets.
 - `docs/` contains testing and contributor documentation.
 - `scripts/` contains development and release helper scripts.
+- `dist/` is ignored and used for generated release packages.

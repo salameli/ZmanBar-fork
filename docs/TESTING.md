@@ -10,6 +10,16 @@ Run the lightweight validation script before committing or packaging a release:
 
 The script checks JavaScript syntax, validates `metadata.json`, compiles the GNOME settings schema, verifies required extension files, and fails if local/generated files are present in the extension tree.
 
+## Release package
+
+Build the release zip with:
+
+```sh
+./scripts/package.sh
+```
+
+The package is written to `dist/` and contains the GNOME Shell extension root layout.
+
 ## Manual smoke test
 
 Use this checklist before publishing a release:
@@ -38,6 +48,6 @@ The release zip should contain only the files needed by GNOME Shell, such as:
 - `src/logging.js`
 - `src/kosher-zmanim.js`
 - `schemas/org.gnome.shell.extensions.zmanbar.gschema.xml`
-- image/SVG assets under `assets/` used by preferences and the README
+- image/SVG assets under `assets/`
 
 It should not contain local state, logs, source package experiments, or generated schema output.

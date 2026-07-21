@@ -55,6 +55,12 @@ Run the basic validation checks before committing or packaging a release:
 ./scripts/check.sh
 ```
 
+Create a GNOME Shell compatible release zip in `dist/`:
+
+```sh
+./scripts/package.sh
+```
+
 See [docs/TESTING.md](docs/TESTING.md) for the manual smoke-test checklist and release package sanity checks.
 See [docs/STRUCTURE.md](docs/STRUCTURE.md) for details about GNOME Shell layout constraints.
 
