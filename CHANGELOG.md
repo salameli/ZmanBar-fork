@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- GNOME Shell 50 compatibility.
 - Open source project documentation and GitHub collaboration templates.
 
 ## [1.0.0] - 2026-07-21
