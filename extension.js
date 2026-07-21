@@ -156,7 +156,7 @@ export default class HebrewDateDisplayExtension extends Extension {
 
     _updateClockDisplay() {
         const clockText = this._dateMenu._clock.clock;
-        this._clockDisplay.set_text(`${clockText}  ${this._hebrewDateString}`);
+        this._clockDisplay.set_text(`${clockText}   ${this._hebrewDateString}`);
     }
 
     _onMenuOpened() {
