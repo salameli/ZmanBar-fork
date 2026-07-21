@@ -58,6 +58,22 @@ Validate the release package layout when changing files included in the extensio
 
 Use the manual checklist in [docs/TESTING.md](docs/TESTING.md) for behavior changes or release preparation.
 
+## Repository access
+
+You do not need write access to this repository to open a pull request.
+
+If you are not a repository collaborator, fork the project on GitHub, clone your fork, create a branch there, and open a pull request back to `salameli/ZmanBar-fork:main`:
+
+```sh
+git clone https://github.com/<your-username>/ZmanBar-fork.git
+cd ZmanBar-fork
+git checkout -b docs/update-contribution-guide
+```
+
+If you have write access, create a focused branch directly in this repository and open a pull request from that branch into `main`.
+
+To request write access, open an issue or contact the maintainer with a short description of what you plan to maintain. Until access is granted, use the fork-based workflow.
+
 ## Branches
 
 Create focused branches from `main`:
