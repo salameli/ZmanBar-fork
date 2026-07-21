@@ -16,7 +16,7 @@ The goal of this fork is to keep the extension clean, maintainable, and easy to 
 - Shows the full Hebrew date, including the year, in the clock/calendar menu.
 - Adds a separate top-panel Zmanim button with daily zmanim for the configured location.
 - Updates the displayed Hebrew date after shkiah when a location is configured.
-- Provides preferences for selecting a location.
+- Can use GNOME Location Services automatically, with preferences for selecting a location manually.
 - Uses a bundled GJS-compatible zmanim/date calculation library.
 
 ## Installation from source

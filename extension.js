@@ -3,6 +3,7 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import St from 'gi://St';
 
@@ -12,6 +13,12 @@ import { bindLoggingSetting, log, logError } from './src/logging.js';
 // so we execute the script to have it attach its main object to the global scope.
 import './src/kosher-zmanim.js';
 const KosherZmanim = globalThis.KosherZmanim;
+const GEOCLUE_BUS_NAME = 'org.freedesktop.GeoClue2';
+const GEOCLUE_MANAGER_PATH = '/org/freedesktop/GeoClue2/Manager';
+const GEOCLUE_MANAGER_IFACE = 'org.freedesktop.GeoClue2.Manager';
+const GEOCLUE_CLIENT_IFACE = 'org.freedesktop.GeoClue2.Client';
+const GEOCLUE_LOCATION_IFACE = 'org.freedesktop.GeoClue2.Location';
+const DBUS_PROPERTIES_IFACE = 'org.freedesktop.DBus.Properties';
 
 function findActorByClassName(actor, className) {
     if (!actor) {
@@ -49,6 +56,9 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._hebrewDateFormatter.setHebrewFormat(true);
         this._clockUpdateTimeout = null;
         this._zmanimMenuButton = null;
+        this._autoLocationStatus = null;
+        this._geoclueClientProxy = null;
+        this._geoclueLocationSignalId = null;
         // Note: Can't log here until settings are loaded in enable()
     }
 
@@ -121,12 +131,13 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._zmanimMenuButton.menu.removeAll();
 
         if (!this._location) {
-            const item = new PopupMenu.PopupMenuItem('Set a location to view zmanim', { reactive: false });
+            const message = this._autoLocationStatus || 'Set a location to view zmanim';
+            const item = new PopupMenu.PopupMenuItem(message, { reactive: false });
             this._zmanimMenuButton.menu.addMenuItem(item);
             return;
         }
 
-        const locationName = this._settings?.get_string('location-name') || this._location.source;
+        const locationName = this._location.name || this._location.source;
         this._zmanimMenuButton.menu.addMenuItem(new PopupMenu.PopupMenuItem(locationName, { reactive: false }));
         this._zmanimMenuButton.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
@@ -136,6 +147,145 @@ export default class HebrewDateDisplayExtension extends Extension {
         }
     }
 
+    _createSystemProxy(objectPath, interfaceName, callback) {
+        Gio.DBusProxy.new_for_bus(
+            Gio.BusType.SYSTEM,
+            Gio.DBusProxyFlags.NONE,
+            null,
+            GEOCLUE_BUS_NAME,
+            objectPath,
+            interfaceName,
+            null,
+            (source, result) => {
+                if (!this._settings) {
+                    return;
+                }
+
+                try {
+                    callback(Gio.DBusProxy.new_for_bus_finish(result));
+                } catch (e) {
+                    logError(e, `Failed to create D-Bus proxy for ${interfaceName}.`);
+                    this._setAutoLocationUnavailable();
+                }
+            }
+        );
+    }
+
+    _callDBus(proxy, methodName, parameters, callback) {
+        proxy.call(methodName, parameters, Gio.DBusCallFlags.NONE, -1, null, (source, result) => {
+            if (!this._settings) {
+                return;
+            }
+
+            try {
+                callback(source.call_finish(result));
+            } catch (e) {
+                logError(e, `D-Bus method ${methodName} failed.`);
+                this._setAutoLocationUnavailable();
+            }
+        });
+    }
+
+    _setDBusProperty(proxy, interfaceName, propertyName, value, callback) {
+        this._callDBus(
+            proxy,
+            'Set',
+            new GLib.Variant('(ssv)', [interfaceName, propertyName, value]),
+            callback
+        );
+    }
+
+    _setAutoLocationUnavailable() {
+        if (this._location) {
+            return;
+        }
+
+        this._autoLocationStatus = 'Location services are disabled or unavailable';
+        this._updateZmanimMenu();
+    }
+
+    _applyLocation(name, latitude, longitude, source) {
+        const timezone = GLib.TimeZone.new_local().get_identifier();
+        this._location = { name, latitude, longitude, timezone, source };
+        const geoLocation = new KosherZmanim.GeoLocation(name, latitude, longitude, 0, timezone);
+        this._zmanimCalendar.setGeoLocation(geoLocation);
+        this._autoLocationStatus = null;
+    }
+
+    _useAutomaticLocation(latitude, longitude) {
+        this._applyLocation('Current Location (automatic)', latitude, longitude, 'Automatic Location');
+        log(`Using automatic location: Lat ${latitude}, Lon ${longitude}`);
+        this._updateAndCacheValues();
+    }
+
+    _readGeoclueLocation() {
+        if (!this._geoclueClientProxy) {
+            return;
+        }
+
+        const locationVariant = this._geoclueClientProxy.get_cached_property('Location');
+        const locationPath = locationVariant?.deep_unpack();
+        if (!locationPath || locationPath === '/') {
+            return;
+        }
+
+        this._createSystemProxy(locationPath, GEOCLUE_LOCATION_IFACE, locationProxy => {
+            const latitude = locationProxy.get_cached_property('Latitude')?.deep_unpack();
+            const longitude = locationProxy.get_cached_property('Longitude')?.deep_unpack();
+
+            if (typeof latitude === 'number' && typeof longitude === 'number') {
+                this._useAutomaticLocation(latitude, longitude);
+            } else {
+                this._setAutoLocationUnavailable();
+            }
+        });
+    }
+
+    _startAutomaticLocationLookup() {
+        if (this._geoclueClientProxy || this._autoLocationStatus === 'Detecting location...') {
+            return;
+        }
+
+        this._autoLocationStatus = 'Detecting location...';
+        this._updateZmanimMenu();
+
+        this._createSystemProxy(GEOCLUE_MANAGER_PATH, GEOCLUE_MANAGER_IFACE, managerProxy => {
+            this._callDBus(managerProxy, 'CreateClient', null, result => {
+                const [clientPath] = result.deep_unpack();
+                this._createSystemProxy(clientPath, GEOCLUE_CLIENT_IFACE, clientProxy => {
+                    this._geoclueClientProxy = clientProxy;
+                    this._geoclueLocationSignalId = clientProxy.connect('g-properties-changed', () => {
+                        this._readGeoclueLocation();
+                    });
+
+                    this._createSystemProxy(clientPath, DBUS_PROPERTIES_IFACE, propertiesProxy => {
+                        this._setDBusProperty(propertiesProxy, GEOCLUE_CLIENT_IFACE, 'DesktopId', new GLib.Variant('s', 'ZmanBar'), () => {
+                            this._setDBusProperty(propertiesProxy, GEOCLUE_CLIENT_IFACE, 'RequestedAccuracyLevel', new GLib.Variant('u', 6), () => {
+                                this._callDBus(clientProxy, 'Start', null, () => {
+                                    this._readGeoclueLocation();
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    }
+
+    _stopAutomaticLocationLookup() {
+        if (!this._geoclueClientProxy) {
+            return;
+        }
+
+        if (this._geoclueLocationSignalId) {
+            this._geoclueClientProxy.disconnect(this._geoclueLocationSignalId);
+            this._geoclueLocationSignalId = null;
+        }
+
+        this._geoclueClientProxy.call('Stop', null, Gio.DBusCallFlags.NONE, -1, null, null);
+        this._geoclueClientProxy = null;
+    }
+
     _useSavedLocation() {
         log('Attempting to use saved location from settings.');
         const settings = this.getSettings();
@@ -143,13 +293,12 @@ export default class HebrewDateDisplayExtension extends Extension {
         const longitude = settings.get_double('longitude');
 
         if (latitude === 0.0 && longitude === 0.0) {
-            log('No saved location found. The date will update at midnight.');
+            log('No saved location found. Attempting automatic location detection.');
             this._location = null;
+            this._startAutomaticLocationLookup();
         } else {
-            const timezone = GLib.TimeZone.new_local().get_identifier();
-            this._location = { latitude, longitude, timezone, source: 'Saved Settings' };
-            const geoLocation = new KosherZmanim.GeoLocation(settings.get_string('location-name'), latitude, longitude, 0, timezone);
-            this._zmanimCalendar.setGeoLocation(geoLocation);
+            this._stopAutomaticLocationLookup();
+            this._applyLocation(settings.get_string('location-name'), latitude, longitude, 'Saved Settings');
             log(`Using saved location: Lat ${latitude}, Lon ${longitude}`);
         }
     }
@@ -329,6 +478,8 @@ export default class HebrewDateDisplayExtension extends Extension {
             this._updateTimeout = null;
         }
 
+        this._stopAutomaticLocationLookup();
+
         if (this._settingsChangedIdLat) this._settings.disconnect(this._settingsChangedIdLat);
         if (this._settingsChangedIdLon) this._settings.disconnect(this._settingsChangedIdLon);
         if (this._settingsChangedIdName) this._settings.disconnect(this._settingsChangedIdName);
@@ -347,6 +498,7 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._location = null;
         this._shkiah = null;
         this._zmanimItems = [];
+        this._autoLocationStatus = null;
         
         log('ZmanBar extension disabled.');
     }
