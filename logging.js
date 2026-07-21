@@ -1,10 +1,26 @@
 
-let logHistory = [];
-let logConnections = new Map();
+let loggingEnabled = false;
+const logHistory = [];
+const logConnections = new Map();
 let connectionId = 0;
 
-export function log(message) {
-    const formattedMessage = `ZmanBar: ${message}`;
+export function bindLoggingSetting(settings) {
+    setLoggingEnabled(settings.get_boolean('enable-logging'));
+    return settings.connect('changed::enable-logging', () => {
+        setLoggingEnabled(settings.get_boolean('enable-logging'));
+    });
+}
+
+export function setLoggingEnabled(enabled) {
+    loggingEnabled = enabled;
+}
+
+export function log(...messages) {
+    if (!loggingEnabled) {
+        return;
+    }
+
+    const formattedMessage = `ZmanBar: ${formatMessages(messages)}`;
     console.log(formattedMessage);
     addLogEntry('LOG', formattedMessage);
 }
@@ -12,7 +28,23 @@ export function log(message) {
 export function logError(error, message) {
     const formattedMessage = `ZmanBar Error: ${message}`;
     console.error(formattedMessage, error);
-    addLogEntry('ERROR', `${formattedMessage} - ${error.message}`);
+    if (loggingEnabled) {
+        addLogEntry('ERROR', `${formattedMessage} - ${error.message}`);
+    }
+}
+
+function formatMessages(messages) {
+    return messages.map(message => {
+        if (typeof message === 'string') {
+            return message;
+        }
+
+        try {
+            return JSON.stringify(message);
+        } catch (_error) {
+            return String(message);
+        }
+    }).join(' ');
 }
 
 function addLogEntry(level, message) {

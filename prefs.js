@@ -6,7 +6,7 @@ import GLib from 'gi://GLib';
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import {createAboutPage} from './aboutPage.js';
 
-import { getLogs, connectToLogs, log, logError } from './logging.js';
+import { bindLoggingSetting, log, logError } from './logging.js';
 
 
 export default class ZmanBarPreferences extends ExtensionPreferences {
@@ -19,14 +19,20 @@ export default class ZmanBarPreferences extends ExtensionPreferences {
         this._window = null;
         this._searchResults = [];
         this._spinner = null;
+        this._loggingSettingsSignal = null;
     }
 
     _onWindowDestroy() {
         log('ZmanBar Preferences window closed.');
+        if (this._loggingSettingsSignal) {
+            this.settings.disconnect(this._loggingSettingsSignal);
+            this._loggingSettingsSignal = null;
+        }
     }
 
     fillPreferencesWindow(window) {
         this.settings = this.getSettings();
+        this._loggingSettingsSignal = bindLoggingSetting(this.settings);
         log('ZmanBar settings object:', this.settings);
         log('Filling preferences window...');
         log(JSON.stringify(this.metadata));
@@ -131,24 +137,12 @@ export default class ZmanBarPreferences extends ExtensionPreferences {
         this._currentSearchMessage = Soup.Message.new('GET', url);
         this._currentSearchMessage.request_headers.append('User-Agent', `GNOME Shell Extension ZmanBar/${this.metadata.version} (https://github.com/dev-in-the-bm/ZmanBar)`);
         
-        let requestHeaders = '';
-        this._currentSearchMessage.request_headers.foreach(function(name, value) {
-            requestHeaders += `\n  ${name}: ${value}`;
-        });
-        log(`Request Headers:${requestHeaders}`);
-
         const message = this._currentSearchMessage;
 
         this._httpSession.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
             log('Search callback initiated.');
 
             log(`Nominatim response status: ${message.get_status()} ${message.get_reason_phrase()}`);
-            let responseHeaders = '';
-            message.response_headers.foreach(function(name, value) {
-                responseHeaders += `\n  ${name}: ${value}`;
-            });
-            log(`Response Headers:${responseHeaders}`);
-
             // Clear the current message reference once the callback is entered.
             this._currentSearchMessage = null;
             this._spinner.stop();
@@ -157,7 +151,6 @@ export default class ZmanBarPreferences extends ExtensionPreferences {
             try {
                 const bytes = session.send_and_read_finish(result);
                 const response = new TextDecoder().decode(bytes.get_data());
-                log(`Nominatim response: ${response}`);
                 const data = JSON.parse(response);
                 this._updateResults(data);
             }
@@ -195,8 +188,6 @@ export default class ZmanBarPreferences extends ExtensionPreferences {
         this._spinner.set_visible(false);
 
         log(`Found ${resultCount} results for location search.`);
-        log(`Search results: ${JSON.stringify(this._searchResults)}`);
-
         if (resultCount === 0) {
             const noResultsLabel = new Gtk.Label({
                 label: 'No results found.',

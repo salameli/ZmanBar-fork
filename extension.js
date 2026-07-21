@@ -7,7 +7,7 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
 
-import { log, logError } from './logging.js';
+import { bindLoggingSetting, log, logError } from './logging.js';
 
 // Import for side-effect: The UMD bundle does not have modern ES6 exports,
 // so we execute the script to have it attach its main object to the global scope.
@@ -206,6 +206,7 @@ export default class HebrewDateDisplayExtension extends Extension {
 
     enable() {
         this._settings = this.getSettings();
+        this._loggingSettingsSignal = bindLoggingSetting(this._settings);
         log('Enabling ZmanBar extension.');
         log('KosherZmanim library loaded successfully.');
 
@@ -243,6 +244,7 @@ export default class HebrewDateDisplayExtension extends Extension {
         if (this._settingsChangedIdLat) this._settings.disconnect(this._settingsChangedIdLat);
         if (this._settingsChangedIdLon) this._settings.disconnect(this._settingsChangedIdLon);
         if (this._settingsChangedIdName) this._settings.disconnect(this._settingsChangedIdName);
+        if (this._loggingSettingsSignal) this._settings.disconnect(this._loggingSettingsSignal);
         if (this._menuStateSignal) this._dateMenu.menu.disconnect(this._menuStateSignal);
 
         this._onMenuClosed();

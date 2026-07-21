@@ -1,0 +1,28 @@
+# Local editor and IDE state
+.idea/
+.vscode/
+
+# opencode local state
+.opencode/
+
+# Runtime/debug logs
+*.log
+logs.txt
+
+# GNOME generated schema output
+schemas/gschemas.compiled
+
+# Local scratch files
+workspace
+list
+gemini_prompt.txt
+gemini_feedback.txt
+
+# Build/release artifacts
+*.zip
+dist/
+build/
+
+# Node/package-manager artifacts used only while adapting vendor libraries
+node_modules/
+npm packages/

@@ -105,8 +105,7 @@ export const createAboutPage = (metadata, settings) => {
         const [start, end] = buffer.get_bounds();
         const text = buffer.get_text(start, end, false);
 
-        log('Copy button clicked.');
-        log(`Copying text to clipboard: ${text}`);
+        log('Copying logs to clipboard.');
         Gdk.Display.get_default().get_clipboard().set(text);
     });
 
@@ -114,19 +113,23 @@ export const createAboutPage = (metadata, settings) => {
 
 
     let clickCount = 0;
+    let logsConnected = false;
     const versionClick = new Gtk.GestureClick();
     versionClick.connect('released', () => {
         clickCount++;
         if (clickCount >= 5) {
             developerGroup.set_visible(true);
+            if (logsConnected) {
+                return;
+            }
+            logsConnected = true;
+
             const buffer = logView.get_buffer();
 
-            // Load existing logs
             const logs = getLogs();
             const existingLogText = logs.map(log => `[${log.timestamp.toLocaleTimeString()}] [${log.level}] ${log.message}`).join('\n');
             buffer.set_text(existingLogText + '\n', -1);
 
-            // Connect to future logs
             connectToLogs(logEntry => {
                 const newLogText = `[${logEntry.timestamp.toLocaleTimeString()}] [${logEntry.level}] ${logEntry.message}\n`;
                 buffer.insert_at_cursor(newLogText, -1);

@@ -47,9 +47,16 @@ If you find this extension useful, please consider supporting its development.
 
 ZmanBar is a GNOME Shell extension written in modern JavaScript (ESM) for the GJS environment. It integrates with core GNOME components by modifying the existing clock and calendar menu labels (`St.Label`) to include the Hebrew date. Date calculations are handled by an adapted version of the `jewish-date` library.
 
+Run the basic validation checks before committing or packaging a release:
+
+```sh
+./scripts/check.sh
+```
+
+See [TESTING.md](TESTING.md) for the manual smoke-test checklist and release package sanity checks.
+
 Contributions are welcome! Feel free to open an issue or submit a pull request.
 
 ## 📜 License
 
 This project is licensed under the GNU General Public License v3.0.
-
