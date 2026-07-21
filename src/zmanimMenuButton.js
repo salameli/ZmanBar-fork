@@ -5,7 +5,8 @@ import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 
 export class ZmanimMenuButton {
-    constructor(uuid) {
+    constructor(uuid, onResetLocation) {
+        this._onResetLocation = onResetLocation;
         this._button = new PanelMenu.Button(0.0, 'Zmanim');
         this._button.add_child(new St.Label({
             text: 'Zmanim',
@@ -15,8 +16,54 @@ export class ZmanimMenuButton {
         Main.panel.addToStatusArea(`${uuid}-zmanim`, this._button);
     }
 
+    _createResetLocationIcon() {
+        const icon = new St.Widget({
+            layout_manager: new Clutter.BinLayout(),
+            width: 18,
+            height: 18,
+        });
+
+        icon.add_child(new St.Icon({
+            icon_name: 'view-refresh-symbolic',
+            icon_size: 18,
+            x_expand: true,
+            y_expand: true,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+        }));
+        icon.add_child(new St.Icon({
+            icon_name: 'mark-location-symbolic',
+            icon_size: 10,
+            x_expand: true,
+            y_expand: true,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+            translation_x: -1,
+            translation_y: 1,
+        }));
+
+        return icon;
+    }
+
+    _createResetLocationItem() {
+        const item = new PopupMenu.PopupBaseMenuItem();
+        item.add_child(this._createResetLocationIcon());
+        item.add_child(new St.Label({
+            text: 'Reset Location',
+            y_align: Clutter.ActorAlign.CENTER,
+        }));
+        item.connect('activate', () => {
+            this._onResetLocation?.();
+        });
+
+        return item;
+    }
+
     update({ location, zmanimItems, status }) {
         this._button.menu.removeAll();
+
+        this._button.menu.addMenuItem(this._createResetLocationItem());
+        this._button.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
         if (!location) {
             this._button.menu.addMenuItem(new PopupMenu.PopupMenuItem(

@@ -58,19 +58,22 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._geoclueClientProxy = null;
         this._geoclueLocationSignalId = null;
         this._reverseGeocoder = null;
+        this._suppressLocationSettingChanged = false;
         // Note: Can't log here until settings are loaded in enable()
     }
 
     _createZmanimMenuButton() {
-        this._zmanimMenuButton = new ZmanimMenuButton(this.metadata.uuid);
+        this._zmanimMenuButton = new ZmanimMenuButton(this.metadata.uuid, () => {
+            this._resetLocation();
+        });
     }
 
     _getZmanimDefinitions() {
         return [
             { label: 'Alot Hashachar', method: 'getAlosHashachar' },
             { label: 'Netz Hachama', method: 'getSunrise' },
-            { label: 'Sof Zman Shema MA', method: 'getSofZmanShmaMGA' },
-            { label: 'Sof Zman Shema GRA', method: 'getSofZmanShmaGRA' },
+            { label: 'Sof Zman Keriat Shema MA', method: 'getSofZmanShmaMGA' },
+            { label: 'Sof Zman Keriat Shema GRA', method: 'getSofZmanShmaGRA' },
             { label: 'Sof Zman Tefila MA', method: 'getSofZmanTfilaMGA' },
             { label: 'Sof Zman Tefila GRA', method: 'getSofZmanTfilaGRA' },
             { label: 'Chatzot', method: 'getChatzos' },
@@ -324,7 +327,27 @@ export default class HebrewDateDisplayExtension extends Extension {
     }
 
     _onLocationSettingChanged() {
+        if (this._suppressLocationSettingChanged) {
+            return;
+        }
+
         log('Manual location setting changed. Re-evaluating location.');
+        this._useSavedLocation();
+        this._updateAndCacheValues();
+    }
+
+    _resetLocation() {
+        log('Resetting location settings and restarting automatic detection.');
+        this._suppressLocationSettingChanged = true;
+        this._settings.set_string('location-name', '');
+        this._settings.set_double('latitude', 0.0);
+        this._settings.set_double('longitude', 0.0);
+        this._suppressLocationSettingChanged = false;
+
+        this._stopAutomaticLocationLookup();
+        this._location = null;
+        this._zmanimItems = [];
+        this._autoLocationStatus = null;
         this._useSavedLocation();
         this._updateAndCacheValues();
     }
