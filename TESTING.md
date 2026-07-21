@@ -38,6 +38,6 @@ The release zip should contain only the files needed by GNOME Shell, such as:
 - `logging.js`
 - `kosher-zmanim.js`
 - `schemas/org.gnome.shell.extensions.zmanbar.gschema.xml`
-- image/SVG assets used by preferences and the README
+- image/SVG assets under `assets/` used by preferences and the README
 
 It should not contain local state, logs, source package experiments, or generated schema output.

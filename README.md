@@ -2,7 +2,7 @@
 
 ZmanBar is a GNOME Shell extension that adds the Hebrew date to the GNOME top panel and calendar menu.
 
-![ZmanBar screenshot](screenshot.png)
+![ZmanBar screenshot](assets/screenshot.png)
 
 ## About this fork
 
