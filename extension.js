@@ -192,8 +192,17 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._autoLocationStatus = null;
     }
 
-    _useAutomaticLocation(latitude, longitude) {
-        this._applyLocation('Current Location (automatic)', latitude, longitude, 'Automatic Location');
+    _formatDetectedLocation(latitude, longitude, description) {
+        if (description) {
+            return description;
+        }
+
+        return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    }
+
+    _useAutomaticLocation(latitude, longitude, description) {
+        const detectedLocation = this._formatDetectedLocation(latitude, longitude, description);
+        this._applyLocation(`Current Location (automatic): ${detectedLocation}`, latitude, longitude, 'Automatic Location');
         log(`Using automatic location: Lat ${latitude}, Lon ${longitude}`);
         this._updateAndCacheValues();
     }
@@ -212,9 +221,10 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._createSystemProxy(locationPath, GEOCLUE_LOCATION_IFACE, locationProxy => {
             const latitude = locationProxy.get_cached_property('Latitude')?.deep_unpack();
             const longitude = locationProxy.get_cached_property('Longitude')?.deep_unpack();
+            const description = locationProxy.get_cached_property('Description')?.deep_unpack();
 
             if (typeof latitude === 'number' && typeof longitude === 'number') {
-                this._useAutomaticLocation(latitude, longitude);
+                this._useAutomaticLocation(latitude, longitude, description);
             } else {
                 this._setAutoLocationUnavailable();
             }
