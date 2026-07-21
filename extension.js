@@ -70,13 +70,15 @@ export default class HebrewDateDisplayExtension extends Extension {
             { label: 'Alot Hashachar', method: 'getAlosHashachar' },
             { label: 'Netz Hachama', method: 'getSunrise' },
             { label: 'Sof Zman Shema GRA', method: 'getSofZmanShmaGRA' },
+            { label: 'Sof Zman Shema MA', method: 'getSofZmanShmaMGA' },
             { label: 'Sof Zman Tefila GRA', method: 'getSofZmanTfilaGRA' },
+            { label: 'Sof Zman Tefila MA', method: 'getSofZmanTfilaMGA' },
             { label: 'Chatzot', method: 'getChatzos' },
             { label: 'Mincha Gedola', method: 'getMinchaGedola' },
             { label: 'Mincha Ketana', method: 'getMinchaKetana' },
             { label: 'Plag Hamincha', method: 'getPlagHamincha' },
-            { label: 'Shkiah', method: 'getSunset' },
-            { label: 'Tzait Hakochavim', method: 'getTzais' },
+            { label: 'Shekia', method: 'getSunset' },
+            { label: 'Tzet Hakochavim', method: 'getTzais' },
         ];
     }
 

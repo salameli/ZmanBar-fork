@@ -19,6 +19,7 @@ export default class ZmanBarPreferences extends ExtensionPreferences {
         this._window = null;
         this._searchResults = [];
         this._spinner = null;
+        this._searchEntry = null;
         this._loggingSettingsSignal = null;
     }
 
@@ -79,6 +80,7 @@ export default class ZmanBarPreferences extends ExtensionPreferences {
             placeholder_text: _('Enter a location, like "Monsey" or "10952"'),
             hexpand: true,
         });
+        this._searchEntry = searchEntry;
         contentBox.append(searchEntry);
 
         this._spinner = new Gtk.Spinner({
@@ -90,11 +92,15 @@ export default class ZmanBarPreferences extends ExtensionPreferences {
         });
         contentBox.append(this._spinner);
 
-        this._resultsBox = new Gtk.Box({
-            orientation: Gtk.Orientation.VERTICAL,
+        this._resultsBox = new Gtk.ListBox({
+            selection_mode: Gtk.SelectionMode.NONE,
             visible: false, // Initially hidden
         });
         contentBox.append(this._resultsBox);
+
+        this._resultsBox.connect('row-activated', (listBox, row) => {
+            this._selectLocationResult(row._zmanBarLocationResult);
+        });
 
 
         // --- Event Handlers ---
@@ -117,6 +123,27 @@ export default class ZmanBarPreferences extends ExtensionPreferences {
         });
 
         return page;
+    }
+
+    _selectLocationResult(result) {
+        if (!result) {
+            return;
+        }
+
+        log(`Location selected: ${result.display_name}`);
+        log(`Setting location to: Lat ${result.lat}, Lon ${result.lon}`);
+        this.settings.set_string('location-name', result.display_name);
+        this.settings.set_double('latitude', parseFloat(result.lat));
+        this.settings.set_double('longitude', parseFloat(result.lon));
+
+        const expander = this._resultsBox.get_ancestor(Adw.ExpanderRow);
+        if (expander) {
+            expander.set_subtitle(result.display_name);
+            expander.set_expanded(false);
+        }
+
+        this._searchEntry?.set_text('');
+        this._clearResults();
     }
 
     _performSearch(query) {
@@ -207,28 +234,7 @@ export default class ZmanBarPreferences extends ExtensionPreferences {
                     subtitle: subtitle || '',
                     activatable: true,
                 });
-
-                row.connect('activated', () => {
-                    log(`Location selected: ${result.display_name}`);
-                    log(`Setting location to: Lat ${result.lat}, Lon ${result.lon}`);
-                    this.settings.set_string('location-name', result.display_name);
-                    this.settings.set_double('latitude', parseFloat(result.lat));
-                    this.settings.set_double('longitude', parseFloat(result.lon));
-
-                    // Update the expander subtitle and close it
-                    const expander = this._resultsBox.get_ancestor(Adw.ExpanderRow);
-                    if (expander) {
-                        expander.set_subtitle(result.display_name);
-                        expander.set_expanded(false);
-                    }
-
-                    // Clear search
-                    const searchEntry = this._resultsBox.get_ancestor(Gtk.Box).get_first_child();
-                    if (searchEntry instanceof Gtk.SearchEntry) {
-                        searchEntry.set_text('');
-                    }
-                    this._clearResults();
-                });
+                row._zmanBarLocationResult = result;
 
                 this._resultsBox.append(row);
             });
