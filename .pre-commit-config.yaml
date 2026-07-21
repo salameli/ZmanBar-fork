@@ -1,0 +1,15 @@
+repos:
+  - repo: local
+    hooks:
+      - id: zmanbar-check
+        name: Run ZmanBar checks
+        entry: ./scripts/check.sh
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: conventional-commit-msg
+        name: Validate Conventional Commit message
+        entry: ./scripts/validate-commit-msg.sh
+        language: system
+        stages: [commit-msg]

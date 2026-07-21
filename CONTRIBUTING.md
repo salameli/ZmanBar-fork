@@ -11,11 +11,13 @@ You need a GNOME Shell development environment with:
 - `node` for JavaScript syntax checks.
 - `python3` for JSON validation.
 - `zip` for release package validation.
+- `pre-commit` for local Git hooks.
 
 On Debian/Ubuntu-based systems:
 
 ```sh
 sudo apt-get install libglib2.0-bin nodejs python3 zip
+python3 -m pip install --user pre-commit
 ```
 
 Clone the repository:
@@ -23,6 +25,8 @@ Clone the repository:
 ```sh
 git clone https://github.com/salameli/ZmanBar-fork.git
 cd ZmanBar-fork
+pre-commit install
+pre-commit install --hook-type commit-msg
 ```
 
 ## Develop locally
@@ -81,6 +85,12 @@ Use Conventional Commits:
 - `ci: update validation workflow`
 
 Keep commits focused. Avoid mixing code changes, documentation updates, and formatting-only changes unless they are part of the same small change.
+
+The repository includes a `commit-msg` pre-commit hook that validates this format locally when installed with:
+
+```sh
+pre-commit install --hook-type commit-msg
+```
 
 ## Pull requests
 

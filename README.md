@@ -55,6 +55,13 @@ Run the basic validation checks before committing or packaging a release:
 ./scripts/check.sh
 ```
 
+Install local hooks if you use `pre-commit`:
+
+```sh
+pre-commit install
+pre-commit install --hook-type commit-msg
+```
+
 Create a GNOME Shell compatible release zip in `dist/`:
 
 ```sh

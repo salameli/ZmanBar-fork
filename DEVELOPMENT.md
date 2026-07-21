@@ -34,6 +34,7 @@ Install the tools used by the repository checks:
 
 ```sh
 sudo apt-get install libglib2.0-bin nodejs python3 zip
+python3 -m pip install --user pre-commit
 ```
 
 Clone the repository and enter it:
@@ -41,6 +42,8 @@ Clone the repository and enter it:
 ```sh
 git clone https://github.com/salameli/ZmanBar-fork.git
 cd ZmanBar-fork
+pre-commit install
+pre-commit install --hook-type commit-msg
 ```
 
 Link the checkout into the local GNOME Shell extensions directory:
@@ -71,6 +74,12 @@ Run:
 
 ```sh
 ./scripts/check.sh
+```
+
+If pre-commit is installed, you can run the same local hook explicitly:
+
+```sh
+pre-commit run --all-files
 ```
 
 The check script verifies:
