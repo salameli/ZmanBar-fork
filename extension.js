@@ -1,6 +1,10 @@
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
+import St from 'gi://St';
 
 import { bindLoggingSetting, log, logError } from './src/logging.js';
 
@@ -39,11 +43,97 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._shkiah = null;
         this._hebrewDateString = '';
         this._hebrewDateStringWithYear = '';
+        this._zmanimItems = [];
         this._zmanimCalendar = new KosherZmanim.ComplexZmanimCalendar();
         this._hebrewDateFormatter = new KosherZmanim.HebrewDateFormatter();
         this._hebrewDateFormatter.setHebrewFormat(true);
         this._clockUpdateTimeout = null;
+        this._zmanimMenuButton = null;
         // Note: Can't log here until settings are loaded in enable()
+    }
+
+    _createZmanimMenuButton() {
+        this._zmanimMenuButton = new PanelMenu.Button(0.0, 'Zmanim');
+        this._zmanimMenuButton.add_child(new St.Label({
+            text: 'Zmanim',
+            y_align: Clutter.ActorAlign.CENTER,
+        }));
+        Main.panel.addToStatusArea(`${this.metadata.uuid}-zmanim`, this._zmanimMenuButton);
+    }
+
+    _getZmanimDefinitions() {
+        return [
+            { label: 'Alot Hashachar', method: 'getAlosHashachar' },
+            { label: 'Netz Hachama', method: 'getSunrise' },
+            { label: 'Sof Zman Shema GRA', method: 'getSofZmanShmaGRA' },
+            { label: 'Sof Zman Tefila GRA', method: 'getSofZmanTfilaGRA' },
+            { label: 'Chatzot', method: 'getChatzos' },
+            { label: 'Mincha Gedola', method: 'getMinchaGedola' },
+            { label: 'Mincha Ketana', method: 'getMinchaKetana' },
+            { label: 'Plag Hamincha', method: 'getPlagHamincha' },
+            { label: 'Shkiah', method: 'getSunset' },
+            { label: 'Tzait Hakochavim', method: 'getTzais' },
+        ];
+    }
+
+    _toJSDate(zman) {
+        if (!zman) {
+            return null;
+        }
+        if (zman instanceof Date) {
+            return zman;
+        }
+        if (typeof zman.toJSDate === 'function') {
+            return zman.toJSDate();
+        }
+        return null;
+    }
+
+    _formatTime(date) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    _calculateZmanim() {
+        if (!this._location || !this._zmanimCalendar) {
+            this._zmanimItems = [];
+            return;
+        }
+
+        this._zmanimItems = this._getZmanimDefinitions().map(({ label, method }) => {
+            try {
+                const date = this._toJSDate(this._zmanimCalendar[method]());
+                return {
+                    label,
+                    time: date ? this._formatTime(date) : 'Unavailable',
+                };
+            } catch (e) {
+                logError(e, `Failed to calculate ${label}.`);
+                return { label, time: 'Unavailable' };
+            }
+        });
+    }
+
+    _updateZmanimMenu() {
+        if (!this._zmanimMenuButton) {
+            return;
+        }
+
+        this._zmanimMenuButton.menu.removeAll();
+
+        if (!this._location) {
+            const item = new PopupMenu.PopupMenuItem('Set a location to view zmanim', { reactive: false });
+            this._zmanimMenuButton.menu.addMenuItem(item);
+            return;
+        }
+
+        const locationName = this._settings?.get_string('location-name') || this._location.source;
+        this._zmanimMenuButton.menu.addMenuItem(new PopupMenu.PopupMenuItem(locationName, { reactive: false }));
+        this._zmanimMenuButton.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+        for (const zman of this._zmanimItems) {
+            const item = new PopupMenu.PopupMenuItem(`${zman.label}: ${zman.time}`, { reactive: false });
+            this._zmanimMenuButton.menu.addMenuItem(item);
+        }
     }
 
     _useSavedLocation() {
@@ -84,7 +174,7 @@ export default class HebrewDateDisplayExtension extends Extension {
         const now = new Date();
         log(`Recalculating shkiah and Hebrew date for ${now.toLocaleString()}`);
 
-        if (this._zmanimCalendar) {
+        if (this._location && this._zmanimCalendar) {
             try {
                 this._zmanimCalendar.setDate(now);
                 this._shkiah = this._zmanimCalendar.getSunset()?.toJSDate();
@@ -118,6 +208,8 @@ export default class HebrewDateDisplayExtension extends Extension {
         }
 
         log(`Cached new Hebrew date: ${this._hebrewDateString}`);
+        this._calculateZmanim();
+        this._updateZmanimMenu();
 
         // Update the display immediately after caching new values
         this._updateClockDisplay();
@@ -210,6 +302,7 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._settingsChangedIdName = this._settings.connect('changed::location-name', this._onLocationSettingChanged.bind(this));
 
         this._menuStateSignal = this._dateMenu.menu.connect('open-state-changed', this._onMenuStateChanged.bind(this));
+        this._createZmanimMenuButton();
 
         this._useSavedLocation();
         this._updateAndCacheValues(); // Initial update
@@ -245,9 +338,15 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._onMenuClosed();
         this._clockDisplay.set_text(this._dateMenu._clock.clock);
 
+        if (this._zmanimMenuButton) {
+            this._zmanimMenuButton.destroy();
+            this._zmanimMenuButton = null;
+        }
+
         this._settings = null;
         this._location = null;
         this._shkiah = null;
+        this._zmanimItems = [];
         
         log('ZmanBar extension disabled.');
     }
