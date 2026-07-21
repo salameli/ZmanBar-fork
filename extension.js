@@ -69,10 +69,10 @@ export default class HebrewDateDisplayExtension extends Extension {
         return [
             { label: 'Alot Hashachar', method: 'getAlosHashachar' },
             { label: 'Netz Hachama', method: 'getSunrise' },
-            { label: 'Sof Zman Shema GRA', method: 'getSofZmanShmaGRA' },
             { label: 'Sof Zman Shema MA', method: 'getSofZmanShmaMGA' },
-            { label: 'Sof Zman Tefila GRA', method: 'getSofZmanTfilaGRA' },
+            { label: 'Sof Zman Shema GRA', method: 'getSofZmanShmaGRA' },
             { label: 'Sof Zman Tefila MA', method: 'getSofZmanTfilaMGA' },
+            { label: 'Sof Zman Tefila GRA', method: 'getSofZmanTfilaGRA' },
             { label: 'Chatzot', method: 'getChatzos' },
             { label: 'Mincha Gedola', method: 'getMinchaGedola' },
             { label: 'Mincha Ketana', method: 'getMinchaKetana' },
@@ -110,13 +110,25 @@ export default class HebrewDateDisplayExtension extends Extension {
                 const date = this._toJSDate(this._zmanimCalendar[method]());
                 return {
                     label,
+                    date,
                     time: date ? this._formatTime(date) : 'Unavailable',
                 };
             } catch (e) {
                 logError(e, `Failed to calculate ${label}.`);
-                return { label, time: 'Unavailable' };
+                return { label, date: null, time: 'Unavailable' };
             }
-        });
+        }).sort((a, b) => {
+            if (a.date && b.date) {
+                return a.date.getTime() - b.date.getTime();
+            }
+            if (a.date) {
+                return -1;
+            }
+            if (b.date) {
+                return 1;
+            }
+            return 0;
+        }).map(({ label, time }) => ({ label, time }));
     }
 
     _updateZmanimMenu() {
