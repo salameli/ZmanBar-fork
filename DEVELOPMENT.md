@@ -16,7 +16,13 @@ The installed extension root must contain the GNOME Shell entrypoints:
 Internal modules live in `src/`:
 
 - `src/aboutPage.js` builds the preferences About page and developer logging UI.
+- `src/dateMenuController.js` updates and restores the GNOME Shell clock/date menu UI.
+- `src/geoclueClient.js` wraps automatic location detection through GeoClue/D-Bus.
+- `src/hebrewDateService.js` coordinates Hebrew date, shkiah, and zmanim calculations.
 - `src/logging.js` contains optional debug logging helpers.
+- `src/reverseGeocoder.js` resolves automatic coordinates into readable location names.
+- `src/updateScheduler.js` schedules recalculation at shkiah or midnight.
+- `src/zmanimCalculator.js` formats and orders daily zmanim.
 - `src/kosher-zmanim.js` is the bundled GJS-compatible zmanim and Hebrew calendar calculation library.
 
 Supporting project files live outside the runtime-critical entrypoints:

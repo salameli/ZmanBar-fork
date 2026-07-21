@@ -44,9 +44,7 @@ The release zip should contain only the files needed by GNOME Shell, such as:
 - `metadata.json`
 - `extension.js`
 - `prefs.js`
-- `src/aboutPage.js`
-- `src/logging.js`
-- `src/kosher-zmanim.js`
+- runtime modules under `src/`
 - `schemas/org.gnome.shell.extensions.zmanbar.gschema.xml`
 - image/SVG assets under `assets/`
 
