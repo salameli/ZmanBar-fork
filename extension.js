@@ -1,11 +1,6 @@
-
-import Clutter from 'gi://Clutter';
-import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import GLib from 'gi://GLib';
-import GObject from 'gi://GObject';
-import Gio from 'gi://Gio';
 
 import { bindLoggingSetting, log, logError } from './logging.js';
 

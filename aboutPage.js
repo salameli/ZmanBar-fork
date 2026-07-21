@@ -3,7 +3,6 @@ import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
 import Gio from 'gi://Gio';
 import Gdk from 'gi://Gdk';
-import GLib from 'gi://GLib';
 import { gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import { getLogs, connectToLogs, log } from './logging.js';
@@ -147,24 +146,11 @@ export const createAboutPage = (metadata, settings) => {
         activatable: true,
     });
     const githubIcon = new Gtk.Image({
-        pixel_size: 24,
+        icon_name: 'web-browser-symbolic',
     });
     githubRow.add_prefix(githubIcon);
     githubRow.connect('activated', () => {
         Gio.AppInfo.launch_default_for_uri(metadata.url, null);
-    });
-
-    const jtechRow = new Adw.ActionRow({
-        title: _('Or say hi on JTech Forums :'),
-        subtitle: 'https://forums.jtechforums.org',
-        activatable: true,
-    });
-    const jtechIcon = new Gtk.Image({
-        pixel_size: 24,
-    });
-    jtechRow.add_prefix(jtechIcon);
-    jtechRow.connect('activated', () => {
-        Gio.AppInfo.launch_default_for_uri('https://forums.jtechforums.org/invites/DSQpWEfMbr', null);
     });
 
     infoGroup.add(githubRow);
@@ -199,8 +185,6 @@ export const createAboutPage = (metadata, settings) => {
     });
     devInfoGroup.add(siteRow);
 
-    devInfoGroup.add(jtechRow);
-
     const feedbackLabel = new Gtk.Label({
         use_markup: true,
         label: `<span size="large" weight="bold">${_('How did you hear about this extension?\nAny comments or suggestions?\nI\'d love to hear from you!')}</span>`,
@@ -209,23 +193,6 @@ export const createAboutPage = (metadata, settings) => {
         margin_bottom: 0,
     });
     box.append(feedbackLabel);
-
-    const styleManager = Adw.StyleManager.get_default();
-
-    const updateIconsForTheme = () => {
-        const isDark = styleManager.get_dark();
-
-        const githubIconName = isDark ? 'github-mark-white.svg' : 'github-mark.svg';
-        const githubFile = Gio.File.new_for_path(`${metadata.path}/${githubIconName}`);
-        githubIcon.set_from_gicon(new Gio.FileIcon({ file: githubFile }));
-
-        const jtechIconName = isDark ? 'Jtech_logo.png' : 'Jtech_logo_dark.png';
-        const jtechFile = Gio.File.new_for_path(`${metadata.path}/${jtechIconName}`);
-        jtechIcon.set_from_gicon(new Gio.FileIcon({ file: jtechFile }));
-    };
-
-    styleManager.connect('notify::dark', updateIconsForTheme);
-    updateIconsForTheme();
 
     const bmcImage = new Gtk.Image({
         file: metadata.path + '/bmc-button.svg',
