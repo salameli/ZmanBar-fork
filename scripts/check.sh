@@ -11,6 +11,7 @@ required_files=(
   prefs.js
   src/aboutPage.js
   src/logging.js
+  src/zmanimMenuButton.js
   src/kosher-zmanim.js
   schemas/org.gnome.shell.extensions.zmanbar.gschema.xml
 )
@@ -26,6 +27,7 @@ node --check extension.js
 node --check prefs.js
 node --check src/aboutPage.js
 node --check src/logging.js
+node --check src/zmanimMenuButton.js
 
 python3 -m json.tool metadata.json >/dev/null
 

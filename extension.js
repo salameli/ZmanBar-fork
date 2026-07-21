@@ -1,13 +1,10 @@
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
-import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
-import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import St from 'gi://St';
 
 import { bindLoggingSetting, log, logError } from './src/logging.js';
+import { ZmanimMenuButton } from './src/zmanimMenuButton.js';
 
 // Import for side-effect: The UMD bundle does not have modern ES6 exports,
 // so we execute the script to have it attach its main object to the global scope.
@@ -63,12 +60,7 @@ export default class HebrewDateDisplayExtension extends Extension {
     }
 
     _createZmanimMenuButton() {
-        this._zmanimMenuButton = new PanelMenu.Button(0.0, 'Zmanim');
-        this._zmanimMenuButton.add_child(new St.Label({
-            text: 'Zmanim',
-            y_align: Clutter.ActorAlign.CENTER,
-        }));
-        Main.panel.addToStatusArea(`${this.metadata.uuid}-zmanim`, this._zmanimMenuButton);
+        this._zmanimMenuButton = new ZmanimMenuButton(this.metadata.uuid);
     }
 
     _getZmanimDefinitions() {
@@ -128,23 +120,11 @@ export default class HebrewDateDisplayExtension extends Extension {
             return;
         }
 
-        this._zmanimMenuButton.menu.removeAll();
-
-        if (!this._location) {
-            const message = this._autoLocationStatus || 'Set a location to view zmanim';
-            const item = new PopupMenu.PopupMenuItem(message, { reactive: false });
-            this._zmanimMenuButton.menu.addMenuItem(item);
-            return;
-        }
-
-        const locationName = this._location.name || this._location.source;
-        this._zmanimMenuButton.menu.addMenuItem(new PopupMenu.PopupMenuItem(locationName, { reactive: false }));
-        this._zmanimMenuButton.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-
-        for (const zman of this._zmanimItems) {
-            const item = new PopupMenu.PopupMenuItem(`${zman.label}: ${zman.time}`, { reactive: false });
-            this._zmanimMenuButton.menu.addMenuItem(item);
-        }
+        this._zmanimMenuButton.update({
+            location: this._location,
+            zmanimItems: this._zmanimItems,
+            status: this._autoLocationStatus,
+        });
     }
 
     _createSystemProxy(objectPath, interfaceName, callback) {
