@@ -155,63 +155,24 @@ export const createAboutPage = (metadata, settings) => {
 
     infoGroup.add(githubRow);
 
-    box.append(new Gtk.Separator({ margin_top: 24, margin_bottom: 24 }));
-
-    const devNameLabel = new Gtk.Label({
-        use_markup: true,
-        label: '<span size="xx-large" weight="bold">Hi 👋, I\'m Dev-in-the-BM</span>',
-        justify: Gtk.Justification.CENTER,
-        margin_top: 18,
-        margin_bottom: 30,
-    });
-    box.append(devNameLabel);
-
     const devInfoGroup = new Adw.PreferencesGroup({
         margin_bottom: 0,
     });
     box.append(devInfoGroup);
 
-    const siteRow = new Adw.ActionRow({
-        title: _('Check out my site:'),
-        subtitle: 'https://dev-in-the-bm.github.io',
+    const originalProjectRow = new Adw.ActionRow({
+        title: _('Original project'),
+        subtitle: 'https://github.com/Dev-in-the-BM/ZmanBar',
         activatable: true,
     });
-    const siteIcon = new Gtk.Image({
+    const originalProjectIcon = new Gtk.Image({
         icon_name: 'web-browser-symbolic',
     });
-    siteRow.add_prefix(siteIcon);
-    siteRow.connect('activated', () => {
-        Gio.AppInfo.launch_default_for_uri('https://dev-in-the-bm.github.io/', null);
+    originalProjectRow.add_prefix(originalProjectIcon);
+    originalProjectRow.connect('activated', () => {
+        Gio.AppInfo.launch_default_for_uri('https://github.com/Dev-in-the-BM/ZmanBar', null);
     });
-    devInfoGroup.add(siteRow);
-
-    const feedbackLabel = new Gtk.Label({
-        use_markup: true,
-        label: `<span size="large" weight="bold">${_('How did you hear about this extension?\nAny comments or suggestions?\nI\'d love to hear from you!')}</span>`,
-        justify: Gtk.Justification.CENTER,
-        margin_top: 24,
-        margin_bottom: 0,
-    });
-    box.append(feedbackLabel);
-
-    const bmcImage = new Gtk.Image({
-        file: metadata.path + '/bmc-button.svg',
-        pixel_size: 200,
-    });
-
-    const bmcButton = new Gtk.Button({
-        child: bmcImage,
-        css_classes: ['flat'], // Use 'flat' style to remove padding/border
-        halign: Gtk.Align.CENTER,
-        margin_top: 12,
-        tooltip_text: _('Buy me a coffee'),
-    });
-
-    bmcButton.connect('clicked', () => {
-        Gio.AppInfo.launch_default_for_uri('https://www.buymeacoffee.com/devinthebm', null);
-    });
-
-    box.append(bmcButton);
+    devInfoGroup.add(originalProjectRow);
 
     return aboutPage;
 };

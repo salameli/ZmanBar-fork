@@ -14,7 +14,7 @@ The script checks JavaScript syntax, validates `metadata.json`, compiles the GNO
 
 Use this checklist before publishing a release:
 
-- Install the extension from the repository into `~/.local/share/gnome-shell/extensions/ZmanBar@dev-in-the-bm.github.io/`.
+- Install the extension from the repository into `~/.local/share/gnome-shell/extensions/ZmanBar@salameli.github.io/`.
 - Restart GNOME Shell or log out and back in.
 - Enable ZmanBar from the Extensions app.
 - Confirm the Hebrew date appears in the top panel.

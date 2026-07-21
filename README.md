@@ -1,51 +1,52 @@
 # ZmanBar
 
-### Hebrew Date for GNOME
+ZmanBar is a GNOME Shell extension that adds the Hebrew date to the GNOME top panel and calendar menu.
 
-![ZmanBar](https://github.com/Dev-in-the-BM/ZmanBar/blob/main/screenshot.png?raw=true)
+![ZmanBar screenshot](screenshot.png)
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Sparkles.png" alt="Sparkles" width="50" height="50" /> Features
+## About this fork
 
-* Displays the Hebrew date (day and month) in the top panel.
-* Shows the full Hebrew date (including year) in the calendar menu.
-* Lightweight and native, with minimal resource usage.
+This repository is a fork of the original [Dev-in-the-BM/ZmanBar](https://github.com/Dev-in-the-BM/ZmanBar) project.
 
----
+The goal of this fork is to keep the extension clean, maintainable, and easy to package while preserving the original functionality.
 
-[![get it on gnome extensions](https://github.com/Dev-in-the-BM/ZmanBar/blob/main/get_it_on_gnome_extensions.png?raw=true)](https://extensions.gnome.org/extension/8774/zmanbar/)
+## Features
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Party%20Popper.png" alt="Party Popper" width="50" height="50" /> New - version 1.0 release
+- Shows the Hebrew date in the GNOME top panel.
+- Shows the full Hebrew date, including the year, in the clock/calendar menu.
+- Updates the displayed Hebrew date after shkiah when a location is configured.
+- Provides preferences for selecting a location.
+- Uses a bundled GJS-compatible zmanim/date calculation library.
 
-**New in this release:** The Hebrew date now updates after shkiah.
-You can set your location in the extensions settings, so the extension can calculate when shkiah is.
+## Installation from source
 
-<details>
-  <summary>Click to view instructions for installing from source</summary>
+Clone this fork and copy it into the GNOME Shell extensions directory:
 
 ```sh
-# 1. Clone the repository
-git clone https://github.com/Dev-in-the-BM/ZmanBar.git
-
-# 2. Copy the extension files
-cp -r ZmanBar/ ~/.local/share/gnome-shell/extensions/ZmanBar@dev-in-the-bm.github.io/
+git clone https://github.com/salameli/ZmanBar-fork.git
+mkdir -p ~/.local/share/gnome-shell/extensions
+cp -r ZmanBar-fork ~/.local/share/gnome-shell/extensions/ZmanBar@salameli.github.io
 ```
 
-3. Restart GNOME Shell (`Alt`+`F2`, `r`, `Enter` on X11, or log out/in on Wayland).
-4. Enable "ZmanBar" in the Extensions app.
+Then restart GNOME Shell:
 
-</details>
+- X11: press `Alt` + `F2`, type `r`, and press `Enter`.
+- Wayland: log out and log back in.
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Red%20Heart.png" alt="Red Heart" width="50" height="50" /> Support This Project
+Finally, enable **ZmanBar** from the Extensions app.
 
-If you find this extension useful, please consider supporting its development.
+## Development
 
-<a href="https://www.buymeacoffee.com/devinthebm" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+ZmanBar is written in modern JavaScript for the GJS runtime used by GNOME Shell extensions.
 
-<br>
+Important files:
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Hammer%20and%20Wrench.png" alt="Hammer and Wrench" width="50" height="50" /> Development
-
-ZmanBar is a GNOME Shell extension written in modern JavaScript (ESM) for the GJS environment. It integrates with core GNOME components by modifying the existing clock and calendar menu labels (`St.Label`) to include the Hebrew date. Date calculations are handled by an adapted version of the `jewish-date` library.
+- `extension.js` — panel and calendar integration.
+- `prefs.js` — preferences window.
+- `aboutPage.js` — about/developer page in preferences.
+- `logging.js` — optional debug logging.
+- `kosher-zmanim.js` — bundled zmanim and Hebrew calendar calculations.
+- `schemas/org.gnome.shell.extensions.zmanbar.gschema.xml` — GNOME settings schema.
 
 Run the basic validation checks before committing or packaging a release:
 
@@ -55,8 +56,12 @@ Run the basic validation checks before committing or packaging a release:
 
 See [TESTING.md](TESTING.md) for the manual smoke-test checklist and release package sanity checks.
 
-Contributions are welcome! Feel free to open an issue or submit a pull request.
+## Credits
 
-## 📜 License
+Original project: [Dev-in-the-BM/ZmanBar](https://github.com/Dev-in-the-BM/ZmanBar)
 
-This project is licensed under the GNU General Public License v3.0.
+This fork uses its own extension UUID: `ZmanBar@salameli.github.io`.
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 or later.

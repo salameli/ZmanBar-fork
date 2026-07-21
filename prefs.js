@@ -135,7 +135,7 @@ export default class ZmanBarPreferences extends ExtensionPreferences {
         const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
         log(`Nominatim URL: ${url}`);
         this._currentSearchMessage = Soup.Message.new('GET', url);
-        this._currentSearchMessage.request_headers.append('User-Agent', `GNOME Shell Extension ZmanBar/${this.metadata.version} (https://github.com/dev-in-the-bm/ZmanBar)`);
+        this._currentSearchMessage.request_headers.append('User-Agent', `GNOME Shell Extension ZmanBar/${this.metadata.version} (https://github.com/salameli/ZmanBar-fork)`);
         
         const message = this._currentSearchMessage;
 

@@ -1,15 +1,12 @@
 {
   "name": "ZmanBar",
   "description": "Seamlessly integrates the Hebrew date into the GNOME top panel.\nThis elegant GNOME extension ensures the current Hebrew date is always visible and perfectly integrated.\n\nNow updates the date at shkiah, instead of midnight!",
-  "uuid": "ZmanBar@dev-in-the-bm.github.io",
+  "uuid": "ZmanBar@salameli.github.io",
   "shell-version": ["48", "49"],
-  "url": "https://github.com/Dev-in-the-BM/ZmanBar",
+  "url": "https://github.com/salameli/ZmanBar-fork",
   "version": 2,
   "version-name": "1.0.0",
-  "gettext-domain": "ZmanBar@dev-in-the-bm.github.io",
-  "donations": {
-    "buymeacoffee": "devinthebm"
-  },
+  "gettext-domain": "ZmanBar@salameli.github.io",
   "settings-schema": "org.gnome.shell.extensions.zmanbar",
   "license": "GPL-3.0-or-later"
 }
