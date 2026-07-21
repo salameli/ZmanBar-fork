@@ -169,7 +169,7 @@ export default class HebrewDateDisplayExtension extends Extension {
 
         // Use the cached full date string
         const newText = `${this._originalDateText}\n${this._hebrewDateStringWithYear}`;
-        log(`Setting new text for notification center: "${newText.replace('\n', '\\n')}"`);
+        log(`Setting new text for notification center: "${newText.replace(/\n/g, '\\n')}"`);
         
         try {
             this._dateLabel.set_text(newText);
