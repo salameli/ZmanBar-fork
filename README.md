@@ -39,14 +39,15 @@ Finally, enable **ZmanBar** from the Extensions app.
 
 ZmanBar is written in modern JavaScript for the GJS runtime used by GNOME Shell extensions.
 
-Important files:
+Repository layout:
 
-- `extension.js` — panel and calendar integration.
-- `prefs.js` — preferences window.
-- `aboutPage.js` — about/developer page in preferences.
-- `logging.js` — optional debug logging.
-- `kosher-zmanim.js` — bundled zmanim and Hebrew calendar calculations.
-- `schemas/org.gnome.shell.extensions.zmanbar.gschema.xml` — GNOME settings schema.
+- `extension.js` — GNOME Shell extension entrypoint; kept at the package root for GNOME Shell.
+- `prefs.js` — preferences entrypoint; kept at the package root for GNOME Shell.
+- `src/` — internal JavaScript modules used by the entrypoints.
+- `schemas/` — GNOME settings schemas; kept at the package root for standard GSettings compilation.
+- `assets/` — screenshots and static project assets.
+- `docs/` — testing notes and contributor-facing documentation.
+- `scripts/` — development and release helper scripts.
 
 Run the basic validation checks before committing or packaging a release:
 
@@ -54,7 +55,8 @@ Run the basic validation checks before committing or packaging a release:
 ./scripts/check.sh
 ```
 
-See [TESTING.md](TESTING.md) for the manual smoke-test checklist and release package sanity checks.
+See [docs/TESTING.md](docs/TESTING.md) for the manual smoke-test checklist and release package sanity checks.
+See [docs/STRUCTURE.md](docs/STRUCTURE.md) for details about GNOME Shell layout constraints.
 
 ## Credits
 
