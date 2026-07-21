@@ -1,257 +1,276 @@
-import Adw from 'gi://Adw';
-import Gtk from 'gi://Gtk';
-import Gio from 'gi://Gio';
-import Soup from 'gi://Soup?version=3.0';
-import GLib from 'gi://GLib';
-import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import {createAboutPage} from './src/aboutPage.js';
+import Adw from "gi://Adw";
+import GLib from "gi://GLib";
+import Gtk from "gi://Gtk";
+import Soup from "gi://Soup?version=3.0";
+import {
+	gettext as _,
+	ExtensionPreferences,
+} from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
+import { createAboutPage } from "./src/aboutPage.js";
 
-import { bindLoggingSetting, log, logError } from './src/logging.js';
-
+import { bindLoggingSetting, log, logError } from "./src/logging.js";
 
 export default class ZmanBarPreferences extends ExtensionPreferences {
-    constructor(metadata) {
-        super(metadata);
-        log('ZmanBar Preferences constructor called.');
-        this._httpSession = Soup.Session.new();
-        this._searchTimeout = null;
-        this._currentSearchMessage = null; // To track the current request
-        this._window = null;
-        this._searchResults = [];
-        this._spinner = null;
-        this._searchEntry = null;
-        this._loggingSettingsSignal = null;
-    }
+	constructor(metadata) {
+		super(metadata);
+		log("ZmanBar Preferences constructor called.");
+		this._httpSession = Soup.Session.new();
+		this._searchTimeout = null;
+		this._currentSearchMessage = null; // To track the current request
+		this._window = null;
+		this._searchResults = [];
+		this._spinner = null;
+		this._searchEntry = null;
+		this._loggingSettingsSignal = null;
+	}
 
-    _onWindowDestroy() {
-        log('ZmanBar Preferences window closed.');
-        if (this._loggingSettingsSignal) {
-            this.settings.disconnect(this._loggingSettingsSignal);
-            this._loggingSettingsSignal = null;
-        }
-    }
+	_onWindowDestroy() {
+		log("ZmanBar Preferences window closed.");
+		if (this._loggingSettingsSignal) {
+			this.settings.disconnect(this._loggingSettingsSignal);
+			this._loggingSettingsSignal = null;
+		}
+	}
 
-    fillPreferencesWindow(window) {
-        this.settings = this.getSettings();
-        this._loggingSettingsSignal = bindLoggingSetting(this.settings);
-        log('ZmanBar settings object:', this.settings);
-        log('Filling preferences window...');
-        log(JSON.stringify(this.metadata));
+	fillPreferencesWindow(window) {
+		this.settings = this.getSettings();
+		this._loggingSettingsSignal = bindLoggingSetting(this.settings);
+		log("ZmanBar settings object:", this.settings);
+		log("Filling preferences window...");
+		log(JSON.stringify(this.metadata));
 
-        this._window = window;
-        this._window.connect('destroy', this._onWindowDestroy.bind(this));
+		this._window = window;
+		this._window.connect("destroy", this._onWindowDestroy.bind(this));
 
-        const locationPage = this._createLocationPage();
-        const aboutPage = createAboutPage(this.metadata, this.settings);
+		const locationPage = this._createLocationPage();
+		const aboutPage = createAboutPage(this.metadata, this.settings);
 
-        window.add(locationPage);
-        window.add(aboutPage);
-    }
+		window.add(locationPage);
+		window.add(aboutPage);
+	}
 
-    _createLocationPage() {
-        const page = new Adw.PreferencesPage({
-            title: _('Location'),
-            iconName: 'location-symbolic',
-        });
+	_createLocationPage() {
+		const page = new Adw.PreferencesPage({
+			title: _("Location"),
+			iconName: "location-symbolic",
+		});
 
-        // --- Location Settings Group ---
-        const group = new Adw.PreferencesGroup({
-            title: _('Location Settings'),
-            description: _('Set your location to get accurate date info.'),
-        });
-        page.add(group);
+		// --- Location Settings Group ---
+		const group = new Adw.PreferencesGroup({
+			title: _("Location Settings"),
+			description: _("Set your location to get accurate date info."),
+		});
+		page.add(group);
 
-        // --- Location Expander Row ---
-        const locationExpander = new Adw.ExpanderRow({
-            title: _('Location'),
-            subtitle: this.settings.get_string('location-name') || _('Not Set'),
-        });
-        group.add(locationExpander);
+		// --- Location Expander Row ---
+		const locationExpander = new Adw.ExpanderRow({
+			title: _("Location"),
+			subtitle: this.settings.get_string("location-name") || _("Not Set"),
+		});
+		group.add(locationExpander);
 
-        const contentBox = new Gtk.Box({
-            orientation: Gtk.Orientation.VERTICAL,
-            spacing: 6,
-            margin_top: 6,
-            margin_bottom: 6,
-        });
-        locationExpander.add_row(contentBox);
+		const contentBox = new Gtk.Box({
+			orientation: Gtk.Orientation.VERTICAL,
+			spacing: 6,
+			margin_top: 6,
+			margin_bottom: 6,
+		});
+		locationExpander.add_row(contentBox);
 
-        const searchEntry = new Gtk.SearchEntry({
-            placeholder_text: _('Enter a location, like "Monsey" or "10952"'),
-            hexpand: true,
-        });
-        this._searchEntry = searchEntry;
-        contentBox.append(searchEntry);
+		const searchEntry = new Gtk.SearchEntry({
+			placeholder_text: _('Enter a location, like "Monsey" or "10952"'),
+			hexpand: true,
+		});
+		this._searchEntry = searchEntry;
+		contentBox.append(searchEntry);
 
-        this._spinner = new Gtk.Spinner({
-            halign: Gtk.Align.CENTER,
-            margin_top: 12,
-            margin_bottom: 12,
-            spinning: false,
-            visible: false,
-        });
-        contentBox.append(this._spinner);
+		this._spinner = new Gtk.Spinner({
+			halign: Gtk.Align.CENTER,
+			margin_top: 12,
+			margin_bottom: 12,
+			spinning: false,
+			visible: false,
+		});
+		contentBox.append(this._spinner);
 
-        this._resultsBox = new Gtk.ListBox({
-            selection_mode: Gtk.SelectionMode.NONE,
-            visible: false, // Initially hidden
-        });
-        contentBox.append(this._resultsBox);
+		this._resultsBox = new Gtk.ListBox({
+			selection_mode: Gtk.SelectionMode.NONE,
+			visible: false, // Initially hidden
+		});
+		contentBox.append(this._resultsBox);
 
-        this._resultsBox.connect('row-activated', (listBox, row) => {
-            this._selectLocationResult(row._zmanBarLocationResult);
-        });
+		this._resultsBox.connect("row-activated", (_listBox, row) => {
+			this._selectLocationResult(row._zmanBarLocationResult);
+		});
 
+		// --- Event Handlers ---
+		searchEntry.connect("search-changed", () => {
+			if (this._searchTimeout) {
+				GLib.source_remove(this._searchTimeout);
+			}
+			this._searchTimeout = GLib.timeout_add(
+				GLib.PRIORITY_DEFAULT,
+				1000,
+				() => {
+					const query = searchEntry.get_text().trim();
+					log(`Search text changed: "${query}"`);
 
-        // --- Event Handlers ---
-        searchEntry.connect('search-changed', () => {
-            if (this._searchTimeout) {
-                GLib.source_remove(this._searchTimeout);
-            }
-            this._searchTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
-                const query = searchEntry.get_text().trim();
-                log(`Search text changed: "${query}"`);
+					if (query.length > 2) {
+						this._performSearch(query);
+					} else {
+						this._clearResults();
+					}
+					this._searchTimeout = null;
+					return GLib.SOURCE_REMOVE;
+				},
+			);
+		});
 
-                if (query.length > 2) {
-                    this._performSearch(query);
-                } else {
-                    this._clearResults();
-                }
-                this._searchTimeout = null;
-                return GLib.SOURCE_REMOVE;
-            });
-        });
+		return page;
+	}
 
-        return page;
-    }
+	_selectLocationResult(result) {
+		if (!result) {
+			return;
+		}
 
-    _selectLocationResult(result) {
-        if (!result) {
-            return;
-        }
+		log(`Location selected: ${result.display_name}`);
+		log(`Setting location to: Lat ${result.lat}, Lon ${result.lon}`);
+		this.settings.set_string("location-name", result.display_name);
+		this.settings.set_double("latitude", parseFloat(result.lat));
+		this.settings.set_double("longitude", parseFloat(result.lon));
 
-        log(`Location selected: ${result.display_name}`);
-        log(`Setting location to: Lat ${result.lat}, Lon ${result.lon}`);
-        this.settings.set_string('location-name', result.display_name);
-        this.settings.set_double('latitude', parseFloat(result.lat));
-        this.settings.set_double('longitude', parseFloat(result.lon));
+		const expander = this._resultsBox.get_ancestor(Adw.ExpanderRow);
+		if (expander) {
+			expander.set_subtitle(result.display_name);
+			expander.set_expanded(false);
+		}
 
-        const expander = this._resultsBox.get_ancestor(Adw.ExpanderRow);
-        if (expander) {
-            expander.set_subtitle(result.display_name);
-            expander.set_expanded(false);
-        }
+		this._searchEntry?.set_text("");
+		this._clearResults();
+	}
 
-        this._searchEntry?.set_text('');
-        this._clearResults();
-    }
+	_performSearch(query) {
+		log(`Searching for location: "${query}"`);
+		this._clearResults();
 
-    _performSearch(query) {
-        log(`Searching for location: "${query}"`);
-        this._clearResults();
+		this._spinner.set_visible(true);
+		this._spinner.start();
 
-        this._spinner.set_visible(true);
-        this._spinner.start();
+		// Cancel any ongoing search
+		if (this._currentSearchMessage) {
+			this._httpSession.cancel_message(
+				this._currentSearchMessage,
+				Soup.Status.CANCELLED,
+			);
+			this._currentSearchMessage = null;
+		}
 
-        // Cancel any ongoing search
-        if (this._currentSearchMessage) {
-            this._httpSession.cancel_message(this._currentSearchMessage, Soup.Status.CANCELLED);
-            this._currentSearchMessage = null;
-        }
+		const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+		log(`Nominatim URL: ${url}`);
+		this._currentSearchMessage = Soup.Message.new("GET", url);
+		this._currentSearchMessage.request_headers.append(
+			"User-Agent",
+			`GNOME Shell Extension ZmanBar/${this.metadata.version} (https://github.com/salameli/ZmanBar-fork)`,
+		);
 
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
-        log(`Nominatim URL: ${url}`);
-        this._currentSearchMessage = Soup.Message.new('GET', url);
-        this._currentSearchMessage.request_headers.append('User-Agent', `GNOME Shell Extension ZmanBar/${this.metadata.version} (https://github.com/salameli/ZmanBar-fork)`);
-        
-        const message = this._currentSearchMessage;
+		const message = this._currentSearchMessage;
 
-        this._httpSession.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
-            log('Search callback initiated.');
+		this._httpSession.send_and_read_async(
+			message,
+			GLib.PRIORITY_DEFAULT,
+			null,
+			(session, result) => {
+				log("Search callback initiated.");
 
-            log(`Nominatim response status: ${message.get_status()} ${message.get_reason_phrase()}`);
-            // Clear the current message reference once the callback is entered.
-            this._currentSearchMessage = null;
-            this._spinner.stop();
-            this._spinner.set_visible(false);
+				log(
+					`Nominatim response status: ${message.get_status()} ${message.get_reason_phrase()}`,
+				);
+				// Clear the current message reference once the callback is entered.
+				this._currentSearchMessage = null;
+				this._spinner.stop();
+				this._spinner.set_visible(false);
 
-            try {
-                const bytes = session.send_and_read_finish(result);
-                const response = new TextDecoder().decode(bytes.get_data());
-                const data = JSON.parse(response);
-                this._updateResults(data);
-            }
-            catch (error) {
-                // Don't log an error if the request was intentionally cancelled
-                if (error instanceof GLib.Error && error.matches(Soup.http_error_quark(), Soup.Status.CANCELLED)) {
-                    log('Location search was cancelled.');
-                } else {
-                    let errorMessage = 'Unknown error';
-                    if (error instanceof GLib.Error) {
-                        errorMessage = `GLib.Error: ${error.message}, code: ${error.code}`;
-                    } else if (error instanceof Error) {
-                        errorMessage = `JS Error: ${error.message}`;
-                    } else {
-                        try {
-                            errorMessage = JSON.stringify(error);
-                        } catch (e) {
-                            errorMessage = 'Error object could not be serialized.';
-                        }
-                    }
-                    log(`Caught error during search: ${errorMessage}`);
-                    logError(error, 'Error fetching location');
-                }
-                this._clearResults();
-            }
-        });
-    }
+				try {
+					const bytes = session.send_and_read_finish(result);
+					const response = new TextDecoder().decode(bytes.get_data());
+					const data = JSON.parse(response);
+					this._updateResults(data);
+				} catch (error) {
+					// Don't log an error if the request was intentionally cancelled
+					if (
+						error instanceof GLib.Error &&
+						error.matches(Soup.http_error_quark(), Soup.Status.CANCELLED)
+					) {
+						log("Location search was cancelled.");
+					} else {
+						let errorMessage = "Unknown error";
+						if (error instanceof GLib.Error) {
+							errorMessage = `GLib.Error: ${error.message}, code: ${error.code}`;
+						} else if (error instanceof Error) {
+							errorMessage = `JS Error: ${error.message}`;
+						} else {
+							try {
+								errorMessage = JSON.stringify(error);
+							} catch (_e) {
+								errorMessage = "Error object could not be serialized.";
+							}
+						}
+						log(`Caught error during search: ${errorMessage}`);
+						logError(error, "Error fetching location");
+					}
+					this._clearResults();
+				}
+			},
+		);
+	}
 
-    _updateResults(results) {
-        this._clearResults();
-        this._searchResults = results || []; // Store results
+	_updateResults(results) {
+		this._clearResults();
+		this._searchResults = results || []; // Store results
 
-        const resultCount = this._searchResults.length;
-        this._spinner.stop();
-        this._spinner.set_visible(false);
+		const resultCount = this._searchResults.length;
+		this._spinner.stop();
+		this._spinner.set_visible(false);
 
-        log(`Found ${resultCount} results for location search.`);
-        if (resultCount === 0) {
-            const noResultsLabel = new Gtk.Label({
-                label: 'No results found.',
-                margin_top: 12,
-                margin_bottom: 12,
-                css_classes: ['dim-label'],
-            });
-            this._resultsBox.append(noResultsLabel);
-        } else {
-            this._searchResults.forEach((result, index) => {
-                const parts = result.display_name.split(', ');
-                const title = parts[0];
-                const subtitle = parts.slice(1).join(', ');
+		log(`Found ${resultCount} results for location search.`);
+		if (resultCount === 0) {
+			const noResultsLabel = new Gtk.Label({
+				label: "No results found.",
+				margin_top: 12,
+				margin_bottom: 12,
+				css_classes: ["dim-label"],
+			});
+			this._resultsBox.append(noResultsLabel);
+		} else {
+			this._searchResults.forEach((result) => {
+				const parts = result.display_name.split(", ");
+				const title = parts[0];
+				const subtitle = parts.slice(1).join(", ");
 
-                const row = new Adw.ActionRow({
-                    title: title,
-                    subtitle: subtitle || '',
-                    activatable: true,
-                });
-                row._zmanBarLocationResult = result;
+				const row = new Adw.ActionRow({
+					title: title,
+					subtitle: subtitle || "",
+					activatable: true,
+				});
+				row._zmanBarLocationResult = result;
 
-                this._resultsBox.append(row);
-            });
-        }
-        this._resultsBox.set_visible(true);
-    }
+				this._resultsBox.append(row);
+			});
+		}
+		this._resultsBox.set_visible(true);
+	}
 
-    _clearResults() {
-        log('Clearing search results.');
-        this._spinner.stop();
-        this._spinner.set_visible(false);
-        this._searchResults = [];
-        let child = this._resultsBox.get_first_child();
-        while (child) {
-            this._resultsBox.remove(child);
-            child = this._resultsBox.get_first_child();
-        }
-        this._resultsBox.set_visible(false);
-    }
+	_clearResults() {
+		log("Clearing search results.");
+		this._spinner.stop();
+		this._spinner.set_visible(false);
+		this._searchResults = [];
+		let child = this._resultsBox.get_first_child();
+		while (child) {
+			this._resultsBox.remove(child);
+			child = this._resultsBox.get_first_child();
+		}
+		this._resultsBox.set_visible(false);
+	}
 }

@@ -8,7 +8,7 @@ function findActorByClassName(actor, className) {
 	}
 	if (actor.get_style_class_name) {
 		const styleClassName = actor.get_style_class_name();
-		if (styleClassName && styleClassName.includes(className)) {
+		if (styleClassName?.includes(className)) {
 			return actor;
 		}
 	}
@@ -121,7 +121,7 @@ export class DateMenuController {
 		this._originalDateText = null;
 	}
 
-	_onMenuStateChanged(menu, isOpen) {
+	_onMenuStateChanged(_menu, isOpen) {
 		log(`Date menu state changed. Is open: ${isOpen}`);
 		if (isOpen) {
 			this._onMenuOpened();

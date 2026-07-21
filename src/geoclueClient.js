@@ -135,7 +135,7 @@ export class GeoclueClient {
 			objectPath,
 			interfaceName,
 			null,
-			(source, result) => {
+			(_source, result) => {
 				if (!this._isCurrentRequest(requestId)) {
 					return;
 				}
