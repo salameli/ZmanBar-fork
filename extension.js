@@ -43,7 +43,6 @@ export default class HebrewDateDisplayExtension extends Extension {
     constructor(metadata) {
         super(metadata);
         this._dateMenu = Main.panel.statusArea.dateMenu;
-        this._clockDisplay = this._dateMenu._clockDisplay;
         this._location = null;
         this._shkiah = null;
         this._hebrewDateString = '';
@@ -52,7 +51,8 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._zmanimCalendar = new KosherZmanim.ComplexZmanimCalendar();
         this._hebrewDateFormatter = new KosherZmanim.HebrewDateFormatter();
         this._hebrewDateFormatter.setHebrewFormat(true);
-        this._clockUpdateTimeout = null;
+        this._clockNotifyId = null;
+        this._clockIdleId = null;
         this._zmanimMenuButton = null;
         this._autoLocationStatus = null;
         this._geoclueClientProxy = null;
@@ -65,6 +65,20 @@ export default class HebrewDateDisplayExtension extends Extension {
     _createZmanimMenuButton() {
         this._zmanimMenuButton = new ZmanimMenuButton(this.metadata.uuid, () => {
             this._resetLocation();
+        });
+    }
+
+    _connectClockUpdates() {
+        this._clockNotifyId = this._dateMenu._clock.connect('notify::clock', () => {
+            if (this._clockIdleId) {
+                return;
+            }
+
+            this._clockIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                this._clockIdleId = null;
+                this._updateHebrewDateDisplay();
+                return GLib.SOURCE_REMOVE;
+            });
         });
     }
 
@@ -403,8 +417,7 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._calculateZmanim();
         this._updateZmanimMenu();
 
-        // Update the display immediately after caching new values
-        this._updateClockDisplay();
+        this._updateHebrewDateDisplay();
         this._scheduleUpdate();
     }
 
@@ -428,14 +441,14 @@ export default class HebrewDateDisplayExtension extends Extension {
 
         const secondsToNextUpdate = Math.max(1, Math.floor((nextUpdate.getTime() - now.getTime()) / 1000));
         this._updateTimeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, secondsToNextUpdate, () => {
-            this._updateAndCacheValues(); // This will recalculate, update display, and reschedule
-            return GLib.SOURCE_REMOVE; // The timeout runs only once
+            this._updateAndCacheValues();
+            return GLib.SOURCE_REMOVE;
         });
     }
 
-    _updateClockDisplay() {
+    _updateHebrewDateDisplay() {
         const clockText = this._dateMenu._clock.clock;
-        this._clockDisplay.set_text(`${clockText}  ${this._hebrewDateString}`);
+        this._dateMenu._clockDisplay.set_text(`${clockText}  ${this._hebrewDateString}`);
     }
 
     _onMenuOpened() {
@@ -495,27 +508,17 @@ export default class HebrewDateDisplayExtension extends Extension {
         this._settingsChangedIdName = this._settings.connect('changed::location-name', this._onLocationSettingChanged.bind(this));
 
         this._menuStateSignal = this._dateMenu.menu.connect('open-state-changed', this._onMenuStateChanged.bind(this));
+        this._connectClockUpdates();
         this._createZmanimMenuButton();
 
         this._useSavedLocation();
-        this._updateAndCacheValues(); // Initial update
-
-        // Start a recurring update every second to keep our date visible
-        this._clockUpdateTimeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
-            this._updateClockDisplay();
-            return GLib.SOURCE_CONTINUE; // Keep the timeout running
-        });
+        this._updateAndCacheValues();
 
         log('ZmanBar extension enabled successfully.');
     }
 
     disable() {
         log('Disabling ZmanBar extension.');
-
-        if (this._clockUpdateTimeout) {
-            GLib.source_remove(this._clockUpdateTimeout);
-            this._clockUpdateTimeout = null;
-        }
 
         if (this._updateTimeout) {
             GLib.source_remove(this._updateTimeout);
@@ -534,8 +537,18 @@ export default class HebrewDateDisplayExtension extends Extension {
         if (this._loggingSettingsSignal) this._settings.disconnect(this._loggingSettingsSignal);
         if (this._menuStateSignal) this._dateMenu.menu.disconnect(this._menuStateSignal);
 
+        if (this._clockNotifyId) {
+            this._dateMenu._clock.disconnect(this._clockNotifyId);
+            this._clockNotifyId = null;
+        }
+
+        if (this._clockIdleId) {
+            GLib.source_remove(this._clockIdleId);
+            this._clockIdleId = null;
+        }
+
         this._onMenuClosed();
-        this._clockDisplay.set_text(this._dateMenu._clock.clock);
+        this._dateMenu._clockDisplay.set_text(this._dateMenu._clock.clock);
 
         if (this._zmanimMenuButton) {
             this._zmanimMenuButton.destroy();
